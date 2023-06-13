@@ -9,31 +9,40 @@ module.exports = async function signDocument(buffer) {
     let approval_signature_field;
     // Find signature field in document
 
+    const page = await doc.getPage(1);
     const fieldIterator = await doc.getFieldIteratorBegin();
+
+    const fields = []
+
     for (; await fieldIterator.hasNext(); fieldIterator.next()) {
-      const field = await fieldIterator.current();
+      const field = await fieldIterator.current();    
+      fields.push(field);
+    }
+
+    fieldIterator.destroy();
+
+    for(const field of fields) {
       const isValid = await field.isValid();
       const isSignatureField =
         (await field.getType()) === PDFNet.Field.Type.e_signature;
-      if (!isValid || !isSignatureField) {
-        continue;
+
+      if(!isValid) continue;
+
+      if(isSignatureField) {
+        approval_signature_field = await PDFNet.DigitalSignatureField.createFromField(field);
       }
-      // Create a digital signature field from found signature field
-      approval_signature_field =
-        await PDFNet.DigitalSignatureField.createFromField(field);
-      // const name = await approval_signature_field.getSignatureName();
-      // console.log(name);
-      // const buffer = await doc.saveMemoryBuffer(0)
-      // doc = await PDFNet.PDFDoc.createFromBuffer(buffer)
-      // await doc.save("pdf4.pdf", PDFNet.SDFDoc.SaveOptions.e_incremental);
+
+      if(!isSignatureField) {
+        await field.flatten(page)
+      }
     }
 
     await approval_signature_field
         .signOnNextSave("./public/files/pdftron.pfx", "password")
         .catch((err) => console.error(err));
 
-    // The actual approval signing will be done during the following incremental save operation.
-    await doc.save("pdffinal.pdf", PDFNet.SDFDoc.SaveOptions.e_incremental);
+    // // The actual approval signing will be done during the following incremental save operation.
+    await doc.save("pdffinalflatten8.pdf", PDFNet.SDFDoc.SaveOptions.e_incremental);
   };
 
   await PDFNet.initialize(
