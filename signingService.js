@@ -1,10 +1,6 @@
 const { PDFNet } = require("@pdftron/pdfnet-node");
 module.exports = async function signDocument(buffer) {
   const main = async (buffer) => {
-    // await PDFNet.initialize(
-    //   (licenseKey =
-    //     "demo:1683529385074:7dd7f414030000000091fc074e0a6e3385a7f45f53af02bd0ff4db06d9")
-    // );
     let doc = await PDFNet.PDFDoc.createFromBuffer(buffer);
     let approval_signature_field;
     // Find signature field in document
